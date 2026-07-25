@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Entregas & Acertos - Renascer</title>
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #0a2540;
+            --primary-light: #183b63;
+            --accent: #f26522;
+            --accent-hover: #d95314;
+            --body-bg: #f4f7fb;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-md: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);
+            --shadow-lg: 0 20px 30px -10px rgba(10, 37, 64, 0.15);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background-color: var(--body-bg);
+            color: var(--text-main);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* TELA DE LOGIN */
+        #loginScreen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, #0a192f 0%, #0f2942 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            padding: 35px 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            text-align: center;
+        }
+
+        .login-card img {
+            max-width: 220px;
+            margin-bottom: 20px;
+        }
+
+        .login-card h2 {
+            color: var(--primary);
+            font-size: 20px;
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .login-card p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        /* CAMPO COM BOTÃO DE VER SENHA */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-wrapper input {
+            padding-right: 45px;
+        }
+
+        .btn-toggle-password {
+            position: absolute;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .btn-toggle-password:hover {
+            color: var(--primary);
+        }
+
+        /* APP MAIN CONTENT */
+        #appContent { display: none; }
+
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        .app-header {
+            background: linear-gradient(135deg, #0a192f 0%, #0f2942 100%);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .logo-img {
+            max-width: 320px;
+            height: auto;
+            margin-bottom: 8px;
+        }
+
+        .header-subtitle {
+            color: #94a3b8;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .card-icon {
+            width: 40px; height: 40px;
+            background: rgba(10, 37, 64, 0.06);
+            color: var(--primary);
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+
+        .card h2 { font-size: 18px; font-weight: 700; color: var(--primary); }
+
+        .form-group { margin-bottom: 16px; text-align: left; }
+
+        label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+            background-color: #fafbfc;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.15);
+        }
+
+        input[readonly] { background-color: #f1f5f9; color: var(--primary); font-weight: 700; }
+
+        .btn {
+            width: 100%;
+            padding: 13px 20px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+
+        .btn-navy { background-color: var(--primary); color: white; }
+        .btn-navy:hover { background-color: var(--primary-light); }
+
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-secondary { background-color: #64748b; color: white; }
+
+        .btn-danger-outline {
+            background: transparent; color: var(--danger);
+            border: 1px solid #fecaca; margin-top: 20px;
+        }
+
+        .table-responsive { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background-color: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; padding: 12px 10px; text-align: center; border-bottom: 1px solid var(--border-color); font-size: 11px; }
+        td { padding: 10px 8px; text-align: center; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+
+        .input-inline-edit { width: 90px; padding: 6px 8px; font-size: 13px; text-align: center; font-weight: 700; border: 1.5px solid #cbd5e1; border-radius: 6px; }
+
+        .btn-action-icon { background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 6px; font-size: 14px; }
+        .btn-action-icon:hover { color: var(--danger); }
+
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-tijolo { background-color: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
+        .badge-lenha { background-color: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 16px; }
+        .kpi-box { background: #f8fafc; padding: 14px; border-radius: var(--radius-md); border: 1px solid #e2e8f0; text-align: left; }
+        .kpi-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+        .kpi-value { font-size: 16px; font-weight: 800; color: var(--primary); }
+        .kpi-value.highlight { color: var(--accent); }
+
+        .acerto-box { background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%); border: 2px dashed #cbd5e1; border-radius: var(--radius-md); padding: 20px; margin-top: 15px; }
+        .acerto-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; font-weight: 600; }
+        .acerto-row.total-final { background: #ffffff; padding: 16px; border-radius: var(--radius-md); margin-top: 12px; border: 1px solid #bbf7d0; }
+        .acerto-row.total-final .val { font-size: 22px; font-weight: 800; color: #16a34a; }
+
+        .filter-box { background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 15px; margin-bottom: 20px; display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+        .filter-box .form-group { margin-bottom: 0; flex: 1; min-width: 140px; }
+
+        .historico-card { background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid var(--accent); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; }
+        .historico-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; }
+        .historico-detalhes { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; font-size: 12px; }
+        .loading-status { font-size: 12px; color: var(--accent); text-align: center; margin-bottom: 10px; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="loginScreen">
+    <div class="login-card">
+        <img src="Logo Renascer Materiais(3) - Copia.jpg" alt="Renascer Logo" onerror="this.style.display='none'">
+        <h2>Acesso Restrito</h2>
+        <p>Informe a senha do sistema para acessar os dados sincronizados na nuvem.</p>
+        <div class="form-group">
+            <label><i class="fa-solid fa-lock"></i> Senha de Acesso</label>
+            <div class="password-wrapper">
+                <input type="password" id="inputSenha" placeholder="Digite a senha..." onkeydown="if(event.key==='Enter') validarAcesso()">
+                <button type="button" class="btn-toggle-password" onclick="toggleSenha()" title="Mostrar/Ocultar Senha">
+                    <i class="fa-solid fa-eye" id="iconEye"></i>
+                </button>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="validarAcesso()" style="margin-top: 10px;">
+            <i class="fa-solid fa-right-to-bracket"></i> Entrar no Sistema
+        </button>
+    </div>
+</div>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div id="appContent">
+    <div class="container">
+
+        <header class="app-header">
+            <img src="Logo Renascer Materiais(3) - Copia.jpg" alt="Renascer Materiais para Construção" class="logo-img" onerror="this.style.display='none'">
+            <div class="header-subtitle"><i class="fa-solid fa-cloud"></i> Sistema de Entregas & Acertos (Sincronizado na Nuvem)</div>
+        </header>
+
+        <div id="statusNuvem" class="loading-status"><i class="fa-solid fa-arrows-rotate fa-spin"></i> Sincronizando com a nuvem...</div>
+
+        <div class="grid-2">
+            <!-- NOVA ENTREGA -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    <h2>Nova Entrega</h2>
+                </div>
+                <form id="formEntrega">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-tag"></i> Tipo de Produto</label>
+                        <select id="tipoProduto" onchange="alterarTipoProduto()">
+                            <option value="TIJOLO">Tijolo (R$ 0,10 / unidade)</option>
+                            <option value="LENHA">Lenha (R$ 65,00 / m³)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-regular fa-calendar"></i> Data Entrega</label>
+                        <input type="date" id="dEntrega" required>
+                    </div>
+                    <div class="form-group">
+                        <label id="lblQuantidade"><i class="fa-solid fa-calculator"></i> Quantidade (Unidades)</label>
+                        <input type="number" step="0.01" id="qtde" required placeholder="Ex: 1000" oninput="calcularValorPagar()">
+                    </div>
+                    <div class="form-group">
+                        <label id="lblValorPagar"><i class="fa-solid fa-sack-dollar"></i> Valor Calculado (R$)</label>
+                        <input type="number" step="0.01" id="aPagar" readonly placeholder="Cálculo automático">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-plus"></i> Registrar Entrega
+                    </button>
+                </form>
+            </div>
+
+            <!-- NOVO ADIANTAMENTO -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                    <h2>Novo Adiantamento / Vale</h2>
+                </div>
+                <form id="formAdiantamento">
+                    <div class="form-group">
+                        <label><i class="fa-regular fa-calendar"></i> Data</label>
+                        <input type="date" id="dataAdiantamento" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-money-bill-wave"></i> Valor (R$)</label>
+                        <input type="number" step="0.01" id="valorAdiantamento" required placeholder="Ex: 50.00">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-comment-dots"></i> Observação / Motivo</label>
+                        <input type="text" id="obsAdiantamento" placeholder="Ex: Vale combustível...">
+                    </div>
+                    <button type="submit" class="btn btn-navy" style="margin-top: 38px;">
+                        <i class="fa-solid fa-plus"></i> Adicionar Adiantamento
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- REGISTRO DE ENTREGAS -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon"><i class="fa-solid fa-list-check"></i></div>
+                <h2>Registro de Entregas Atuais</h2>
+            </div>
+            <div class="table-responsive">
+                <table id="tabelaEntregas">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Data</th>
+                            <th>Qtde (Editável)</th>
+                            <th>Valor Total</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-box"><div class="kpi-title">Total Tijolos</div><div class="kpi-value" id="totalTijolos">0 un</div></div>
+                <div class="kpi-box"><div class="kpi-title">Total Lenha</div><div class="kpi-value" id="totalLenha">0,00 m³</div></div>
+                <div class="kpi-box"><div class="kpi-title">Total Bruto</div><div class="kpi-value highlight" id="totalValor">R$ 0,00</div></div>
+                <div class="kpi-box"><div class="kpi-title">Nº Viagens</div><div class="kpi-value" id="totalDias">0</div></div>
+                <div class="kpi-box"><div class="kpi-title">Média Tijolos/Viagem</div><div class="kpi-value" id="mediaTijolos">0 un</div></div>
+                <div class="kpi-box"><div class="kpi-title">Média Lenha/Viagem</div><div class="kpi-value" id="mediaLenha">0,00 m³</div></div>
+            </div>
+        </div>
+
+        <!-- CONTROLE DE ADIANTAMENTOS -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon"><i class="fa-solid fa-receipt"></i></div>
+                <h2>Controle de Adiantamentos / Vales</h2>
+            </div>
+            <div class="table-responsive">
+                <table id="tabelaAdiantamentos">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Valor (R$)</th>
+                            <th>Observação</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="kpi-grid" style="grid-template-columns: 1fr;">
+                <div class="kpi-box" style="border-left: 4px solid var(--danger);">
+                    <div class="kpi-title">Total em Adiantamentos</div>
+                    <div class="kpi-value" id="totalAdiantamentos" style="color: var(--danger);">R$ 0,00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAINEL DE ACERTO DE CONTAS -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                <h2>Acerto de Contas & Fechamento</h2>
+            </div>
+            <button class="btn btn-navy" onclick="calcularAcerto()">
+                <i class="fa-solid fa-calculator"></i> Calcular Acerto de Contas
+            </button>
+
+            <div id="painelAcerto" style="display: none;">
+                <div class="acerto-box">
+                    <div class="acerto-row"><span><i class="fa-regular fa-calendar-check"></i> Data do Acerto:</span><span id="acertoDataPagamento" style="color: var(--primary); font-weight: 800;">-</span></div>
+                    <div class="acerto-row"><span>Total a Receber (Entregas):</span><span id="acertoTotalEntregas">R$ 0,00</span></div>
+                    <div class="acerto-row"><span style="color: var(--danger);">(-) Total Adiantamentos:</span><span id="acertoTotalAdiantamentos" style="color: var(--danger);">R$ 0,00</span></div>
+                    <div class="acerto-row total-final"><span>SALDO LÍQUIDO A RECEBER:</span><span class="val" id="acertoSaldoFinal">R$ 0,00</span></div>
+                </div>
+                
+                <button class="btn btn-success" style="margin-top: 15px;" onclick="salvarAcertoHistorico()">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar e Fechar Acerto na Nuvem
+                </button>
+            </div>
+        </div>
+
+        <!-- HISTÓRICO DE ACERTOS SALVOS -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <h2>Histórico de Acertos Salvos (Nuvem)</h2>
+            </div>
+
+            <div class="filter-box">
+                <div class="form-group"><label>De (Data Inicial)</label><input type="date" id="filtroDataInicio"></div>
+                <div class="form-group"><label>Até (Data Final)</label><input type="date" id="filtroDataFim"></div>
+                <div style="display: flex; gap: 8px; width: 100%;">
+                    <button class="btn btn-navy" onclick="filtrarHistorico()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                    <button class="btn btn-secondary" onclick="limparFiltroHistorico()"><i class="fa-solid fa-rotate-left"></i> Limpar</button>
+                </div>
+            </div>
+
+            <div id="historicoContainer"></div>
+        </div>
+
+        <button class="btn btn-danger-outline" onclick="limparDadosNuvem()">
+            <i class="fa-solid fa-trash-can"></i> Limpar Dados do Banco na Nuvem
+        </button>
+
+    </div>
+</div>
+
+<script>
+    // 🔑 CONFIGURAÇÃO DE SENHA E BANCO
+    const SENHA_CORRETA = "renascer123";
+    const BIN_ID = "661448eb1522f3747424b918"; 
+    const API_KEY = "$2a$10$wT5gCkW9i954.GkThc8i7.9N3f0vXk39vXvQzXzZ"; 
+    const API_URL = "https://api.jsonbin.io/v3/b/" + BIN_ID;
+
+    let entregas = [];
+    let adiantamentos = [];
+    let historicoAcertos = [];
+
+    function toggleSenha() {
+        const input = document.getElementById('inputSenha');
+        const icon = document.getElementById('iconEye');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    function validarAcesso() {
+        const senhaDigitada = document.getElementById('inputSenha').value.trim();
+        if(senhaDigitada === SENHA_CORRETA) {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
+            carregarDadosNuvem();
+        } else {
+            alert("Senha incorreta! Digite: renascer123");
+        }
+    }
+
+    async function carregarDadosNuvem() {
+        const statusEl = document.getElementById('statusNuvem');
+        statusEl.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> Sincronizando com a nuvem...';
+        
+        const hoje = new Date().toISOString().split('T')[0];
+        document.getElementById('dEntrega').value = hoje;
+        document.getElementById('dataAdiantamento').value = hoje;
+
+        try {
+            const res = await fetch(API_URL + "/latest", {
+                headers: { "X-Master-Key": API_KEY }
+            });
+            const data = await res.json();
+            const record = data.record || {};
+            entregas = record.entregas || [];
+            adiantamentos = record.adiantamentos || [];
+            historicoAcertos = record.historicoAcertos || [];
+            atualizarTabelas();
+            statusEl.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Conectado e Sincronizado!';
+            statusEl.style.color = 'var(--success)';
+        } catch (err) {
+            console.error(err);
+            statusEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Erro ao conectar na nuvem. Usando modo local.';
+            statusEl.style.color = 'var(--danger)';
+        }
+    }
+
+    async function salvarNaNuvem() {
+        const statusEl = document.getElementById('statusNuvem');
+        statusEl.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> Salvando na nuvem...';
+        statusEl.style.color = 'var(--accent)';
+
+        try {
+            await fetch(API_URL, {
+                method: 'PUT',
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Master-Key": API_KEY
+                },
+                body: JSON.stringify({
+                    entregas: entregas,
+                    adiantamentos: adiantamentos,
+                    historicoAcertos: historicoAcertos
+                })
+            });
+            atualizarTabelas();
+            statusEl.innerHTML = '<i class="fa-solid fa-check"></i> Dados salvos na nuvem com sucesso!';
+            statusEl.style.color = 'var(--success)';
+        } catch (err) {
+            console.error(err);
+            statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Erro ao salvar na nuvem.';
+            statusEl.style.color = 'var(--danger)';
+        }
+    }
+
+    function alterarTipoProduto() {
+        const tipo = document.getElementById('tipoProduto').value;
+        const lblQtde = document.getElementById('lblQuantidade');
+        const lblValor = document.getElementById('lblValorPagar');
+        const inputQtde = document.getElementById('qtde');
+
+        if (tipo === 'TIJOLO') {
+            lblQtde.innerHTML = '<i class="fa-solid fa-calculator"></i> Quantidade (Unidades):';
+            lblValor.innerHTML = '<i class="fa-solid fa-sack-dollar"></i> Valor Calculado (R$ 0,10 / un):';
+            inputQtde.placeholder = 'Ex: 1000';
+        } else {
+            lblQtde.innerHTML = '<i class="fa-solid fa-calculator"></i> Quantidade em m³ (Metro Cúbico):';
+            lblValor.innerHTML = '<i class="fa-solid fa-sack-dollar"></i> Valor Calculado (R$ 65,00 / m³):';
+            inputQtde.placeholder = 'Ex: 15.5';
+        }
+        calcularValorPagar();
+    }
+
+    function calcularValorPagar() {
+        const tipo = document.getElementById('tipoProduto').value;
+        const qtde = parseFloat(document.getElementById('qtde').value) || 0;
+        let aPagar = (tipo === 'TIJOLO') ? (qtde * 0.10) : (qtde * 65.00);
+        document.getElementById('aPagar').value = (qtde > 0) ? aPagar.toFixed(2) : '';
+    }
+
+    function formatarData(dataStr) {
+        if(!dataStr) return '-';
+        const parts = dataStr.split('-');
+        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dataStr;
+    }
+
+    function formatarMoeda(valor) {
+        return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function atualizarQuantidadeEntrega(index, novaQtde) {
+        let val = parseFloat(novaQtde);
+        if (isNaN(val) || val < 0) val = 0;
+        
+        entregas[index].qtde = val;
+        entregas[index].aPagar = (entregas[index].tipo === 'TIJOLO') ? (val * 0.10).toFixed(2) : (val * 65.00).toFixed(2);
+        salvarNaNuvem();
+    }
+
+    function removerEntrega(index) {
+        if (confirm("Deseja remover esta entrega?")) {
+            entregas.splice(index, 1);
+            salvarNaNuvem();
+        }
+    }
+
+    function removerAdiantamento(index) {
+        if (confirm("Deseja remover este adiantamento?")) {
+            adiantamentos.splice(index, 1);
+            salvarNaNuvem();
+        }
+    }
+
+    function atualizarTabelas() {
+        const tbodyEntregas = document.querySelector('#tabelaEntregas tbody');
+        tbodyEntregas.innerHTML = '';
+        let totalQtdeTijolos = 0, totalQtdeLenha = 0, totalValor = 0, viagensTijolo = 0, viagensLenha = 0;
+
+        if (entregas.length === 0) {
+            tbodyEntregas.innerHTML = `<tr><td colspan="5" style="color: #94a3b8; padding: 18px;">Nenhuma entrega registrada.</td></tr>`;
+        } else {
+            entregas.forEach((item, index) => {
+                const valorItem = Number(item.aPagar);
+                const qtdeItem = Number(item.qtde);
+                totalValor += valorItem;
+
+                const isLenha = item.tipo === 'LENHA';
+                if (isLenha) { totalQtdeLenha += qtdeItem; viagensLenha++; } 
+                else { totalQtdeTijolos += qtdeItem; viagensTijolo++; }
+
+                tbodyEntregas.innerHTML += `
+                    <tr>
+                        <td><span class="badge ${isLenha ? 'badge-lenha' : 'badge-tijolo'}">${item.tipo}</span></td>
+                        <td>${formatarData(item.dEntrega)}</td>
+                        <td><input type="number" step="0.01" class="input-inline-edit" value="${qtdeItem}" onchange="atualizarQuantidadeEntrega(${index}, this.value)"> ${isLenha ? 'm³' : 'un'}</td>
+                        <td style="font-weight: 700; color: var(--primary);">${formatarMoeda(valorItem)}</td>
+                        <td><button class="btn-action-icon" onclick="removerEntrega(${index})"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('totalTijolos').innerText = `${totalQtdeTijolos} un`;
+        document.getElementById('totalLenha').innerText = `${totalQtdeLenha.toFixed(2).replace('.', ',')} m³`;
+        document.getElementById('totalValor').innerText = formatarMoeda(totalValor);
+        document.getElementById('totalDias').innerText = entregas.length;
+        document.getElementById('mediaTijolos').innerText = `${viagensTijolo > 0 ? (totalQtdeTijolos / viagensTijolo).toFixed(0) : 0} un`;
+        document.getElementById('mediaLenha').innerText = `${viagensLenha > 0 ? (totalQtdeLenha / viagensLenha).toFixed(2).replace('.', ',') : '0,00'} m³`;
+
+        const tbodyAdiantamentos = document.querySelector('#tabelaAdiantamentos tbody');
+        tbodyAdiantamentos.innerHTML = '';
+        let totalAdiantamento = 0;
+
+        if (adiantamentos.length === 0) {
+            tbodyAdiantamentos.innerHTML = `<tr><td colspan="4" style="color: #94a3b8; padding: 18px;">Nenhum adiantamento registrado.</td></tr>`;
+        } else {
+            adiantamentos.forEach((item, index) => {
+                totalAdiantamento += Number(item.valor);
+                tbodyAdiantamentos.innerHTML += `
+                    <tr>
+                        <td>${formatarData(item.data)}</td>
+                        <td style="font-weight: 700; color: var(--danger);">${formatarMoeda(item.valor)}</td>
+                        <td>${item.obs || '-'}</td>
+                        <td><button class="btn-action-icon" onclick="removerAdiantamento(${index})"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('totalAdiantamentos').innerText = formatarMoeda(totalAdiantamento);
+        renderizarHistorico();
+    }
+
+    document.getElementById('formEntrega').addEventListener('submit', function(e) {
+        e.preventDefault();
+        entregas.push({
+            tipo: document.getElementById('tipoProduto').value,
+            dEntrega: document.getElementById('dEntrega').value,
+            qtde: document.getElementById('qtde').value,
+            aPagar: document.getElementById('aPagar').value
+        });
+        this.reset();
+        document.getElementById('dEntrega').value = new Date().toISOString().split('T')[0];
+        alterarTipoProduto();
+        salvarNaNuvem();
+    });
+
+    document.getElementById('formAdiantamento').addEventListener('submit', function(e) {
+        e.preventDefault();
+        adiantamentos.push({
+            data: document.getElementById('dataAdiantamento').value,
+            valor: document.getElementById('valorAdiantamento').value,
+            obs: document.getElementById('obsAdiantamento').value
+        });
+        this.reset();
+        document.getElementById('dataAdiantamento').value = new Date().toISOString().split('T')[0];
+        salvarNaNuvem();
+    });
+
+    function calcularAcerto() {
+        const totalEntregas = entregas.reduce((acc, item) => acc + Number(item.aPagar), 0);
+        const totalAdiantamentos = adiantamentos.reduce((acc, item) => acc + Number(item.valor), 0);
+        
+        document.getElementById('acertoDataPagamento').innerText = new Date().toLocaleDateString('pt-BR');
+        document.getElementById('acertoTotalEntregas').innerText = formatarMoeda(totalEntregas);
+        document.getElementById('acertoTotalAdiantamentos').innerText = formatarMoeda(totalAdiantamentos);
+        document.getElementById('acertoSaldoFinal').innerText = formatarMoeda(totalEntregas - totalAdiantamentos);
+        document.getElementById('painelAcerto').style.display = 'block';
+    }
+
+    function salvarAcertoHistorico() {
+        if (entregas.length === 0 && adiantamentos.length === 0) {
+            alert("Não há registros para fechar acerto.");
+            return;
+        }
+
+        const totalEntregas = entregas.reduce((acc, item) => acc + Number(item.aPagar), 0);
+        const totalTijolos = entregas.filter(i => i.tipo === 'TIJOLO').reduce((acc, item) => acc + Number(item.qtde), 0);
+        const totalLenha = entregas.filter(i => i.tipo === 'LENHA').reduce((acc, item) => acc + Number(item.qtde), 0);
+        const totalAdiantamentos = adiantamentos.reduce((acc, item) => acc + Number(item.valor), 0);
+
+        historicoAcertos.push({
+            id: Date.now(),
+            isoDate: new Date().toISOString().split('T')[0],
+            dataAcerto: new Date().toLocaleDateString('pt-BR'),
+            totalTijolos: totalTijolos,
+            totalLenha: totalLenha,
+            totalEntregas: totalEntregas,
+            totalAdiantamentos: totalAdiantamentos,
+            saldoPago: totalEntregas - totalAdiantamentos
+        });
+
+        entregas = [];
+        adiantamentos = [];
+        document.getElementById('painelAcerto').style.display = 'none';
+        salvarNaNuvem();
+        alert("Acerto salvo na Nuvem com sucesso!");
+    }
+
+    function renderizarHistorico(lista = historicoAcertos) {
+        const container = document.getElementById('historicoContainer');
+        container.innerHTML = '';
+
+        if (!lista || lista.length === 0) {
+            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum acerto no histórico.</div>`;
+            return;
+        }
+
+        [...lista].reverse().forEach(item => {
+            container.innerHTML += `
+                <div class="historico-card">
+                    <div class="historico-header">
+                        <strong style="color: var(--primary);">Acerto #${item.id}</strong>
+                        <div>
+                            <span style="font-size: 12px; font-weight: 700; margin-right: 8px;">${item.dataAcerto}</span>
+                            <button class="btn-action-icon" onclick="removerAcertoHistorico(${item.id})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="historico-detalhes">
+                        <div>Entregas: <strong>${formatarMoeda(item.totalEntregas)}</strong></div>
+                        <div>Adiantamentos: <strong style="color: var(--danger);">${formatarMoeda(item.totalAdiantamentos)}</strong></div>
+                        <div>Líquido Pago: <strong style="color: var(--success);">${formatarMoeda(item.saldoPago)}</strong></div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function filtrarHistorico() {
+        const dInicio = document.getElementById('filtroDataInicio').value;
+        const dFim = document.getElementById('filtroDataFim').value;
+        const res = historicoAcertos.filter(i => {
+            if (dInicio && i.isoDate < dInicio) return false;
+            if (dFim && i.isoDate > dFim) return false;
+            return true;
+        });
+        renderizarHistorico(res);
+    }
+
+    function limparFiltroHistorico() {
+        document.getElementById('filtroDataInicio').value = '';
+        document.getElementById('filtroDataFim').value = '';
+        renderizarHistorico(historicoAcertos);
+    }
+
+    function removerAcertoHistorico(id) {
+        if (confirm("Remover este acerto do histórico da nuvem?")) {
+            historicoAcertos = historicoAcertos.filter(i => i.id !== id);
+            salvarNaNuvem();
+        }
+    }
+
+    function limparDadosNuvem() {
+        if (confirm("ATENÇÃO: Deseja apagar TODOS os dados salvos na nuvem?")) {
+            entregas = [];
+            adiantamentos = [];
+            historicoAcertos = [];
+            salvarNaNuvem();
+        }
+    }
+</script>
+
+</body>
+</html>
