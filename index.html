@@ -85,9 +85,7 @@
             align-items: center;
         }
 
-        .password-wrapper input {
-            padding-right: 45px;
-        }
+        .password-wrapper input { padding-right: 45px; }
 
         .btn-toggle-password {
             position: absolute;
@@ -269,6 +267,10 @@
                 </div>
                 <form id="formEntrega">
                     <div class="form-group">
+                        <label><i class="fa-solid fa-truck"></i> Nome do Fornecedor / Entregador</label>
+                        <input type="text" id="fornecedorEntrega" placeholder="Ex: João da Silva / Ceramica X">
+                    </div>
+                    <div class="form-group">
                         <label><i class="fa-solid fa-tag"></i> Tipo de Produto</label>
                         <select id="tipoProduto" onchange="alterarTipoProduto()">
                             <option value="TIJOLO">Tijolo (R$ 0,10 / unidade)</option>
@@ -301,6 +303,10 @@
                 </div>
                 <form id="formAdiantamento">
                     <div class="form-group">
+                        <label><i class="fa-solid fa-user"></i> Fornecedor / Favorecido</label>
+                        <input type="text" id="fornecedorVale" placeholder="Ex: João da Silva">
+                    </div>
+                    <div class="form-group">
                         <label><i class="fa-regular fa-calendar"></i> Data</label>
                         <input type="date" id="dataAdiantamento" required>
                     </div>
@@ -312,7 +318,7 @@
                         <label><i class="fa-solid fa-comment-dots"></i> Observação / Motivo</label>
                         <input type="text" id="obsAdiantamento" placeholder="Ex: Vale combustível...">
                     </div>
-                    <button type="submit" class="btn btn-navy" style="margin-top: 38px;">
+                    <button type="submit" class="btn btn-navy" style="margin-top: 15px;">
                         <i class="fa-solid fa-plus"></i> Adicionar Adiantamento
                     </button>
                 </form>
@@ -329,6 +335,7 @@
                 <table id="tabelaEntregas">
                     <thead>
                         <tr>
+                            <th>Fornecedor</th>
                             <th>Produto</th>
                             <th>Data</th>
                             <th>Qtde (Editável)</th>
@@ -358,6 +365,7 @@
                 <table id="tabelaAdiantamentos">
                     <thead>
                         <tr>
+                            <th>Fornecedor</th>
                             <th>Data</th>
                             <th>Valor (R$)</th>
                             <th>Observação</th>
@@ -385,12 +393,19 @@
                 <div class="card-icon"><i class="fa-solid fa-scale-balanced"></i></div>
                 <h2>Acerto de Contas & Fechamento</h2>
             </div>
+            
+            <div class="form-group" style="max-width: 500px; margin-bottom: 15px;">
+                <label><i class="fa-solid fa-user-check"></i> Nome do Fornecedor para este Acerto</label>
+                <input type="text" id="nomeFornecedorAcerto" placeholder="Ex: João da Silva (deixe em branco se for geral)">
+            </div>
+
             <button class="btn btn-navy" onclick="calcularAcerto()">
                 <i class="fa-solid fa-calculator"></i> Calcular Acerto de Contas
             </button>
 
             <div id="painelAcerto" style="display: none;">
                 <div class="acerto-box">
+                    <div class="acerto-row"><span><i class="fa-solid fa-user"></i> Fornecedor Registrado:</span><span id="acertoNomeFornecedor" style="color: var(--primary); font-weight: 800;">Geral</span></div>
                     <div class="acerto-row"><span><i class="fa-regular fa-calendar-check"></i> Data do Acerto:</span><span id="acertoDataPagamento" style="color: var(--primary); font-weight: 800;">-</span></div>
                     <div class="acerto-row"><span>Total a Receber (Entregas):</span><span id="acertoTotalEntregas">R$ 0,00</span></div>
                     <div class="acerto-row"><span style="color: var(--danger);">(-) Total Adiantamentos:</span><span id="acertoTotalAdiantamentos" style="color: var(--danger);">R$ 0,00</span></div>
@@ -407,15 +422,22 @@
         <div class="card">
             <div class="card-header">
                 <div class="card-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                <h2>Consulta de Período & Relatórios Salvos</h2>
+                <h2>Consulta de Período, Fornecedor & Relatórios Salvos</h2>
             </div>
 
-            <!-- OPÇÃO DE ESCOLHER O PERÍODO -->
+            <!-- OPÇÃO DE ESCOLHER O PERÍODO E FORNECEDOR -->
             <div class="filter-box">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-truck"></i> Filtrar por Fornecedor</label>
+                    <select id="filtroFornecedor">
+                        <option value="TODOS">-- Todos os Fornecedores --</option>
+                    </select>
+                </div>
                 <div class="form-group"><label><i class="fa-regular fa-calendar"></i> De (Data Inicial)</label><input type="date" id="filtroDataInicio"></div>
                 <div class="form-group"><label><i class="fa-regular fa-calendar"></i> Até (Data Final)</label><input type="date" id="filtroDataFim"></div>
-                <div style="display: flex; gap: 8px; width: 100%; flex-wrap: wrap;">
-                    <button class="btn btn-navy" style="flex:1;" onclick="filtrarHistorico()"><i class="fa-solid fa-magnifying-glass"></i> Consultar Período</button>
+                
+                <div style="display: flex; gap: 8px; width: 100%; flex-wrap: wrap; margin-top: 10px;">
+                    <button class="btn btn-navy" style="flex:1;" onclick="filtrarHistorico()"><i class="fa-solid fa-magnifying-glass"></i> Consultar</button>
                     <button class="btn btn-secondary" style="flex:1;" onclick="limparFiltroHistorico()"><i class="fa-solid fa-rotate-left"></i> Limpar Filtro</button>
                     <button class="btn btn-primary" style="flex:1; background-color: #0284c7;" onclick="gerarRelatorioPDF()"><i class="fa-solid fa-print"></i> Gerar Relatório / Imprimir PDF</button>
                 </div>
@@ -547,7 +569,7 @@
         let totalQtdeTijolos = 0, totalQtdeLenha = 0, totalValor = 0;
 
         if (entregas.length === 0) {
-            tbodyEntregas.innerHTML = `<tr><td colspan="5" style="color: #94a3b8; padding: 18px;">Nenhuma entrega aberta.</td></tr>`;
+            tbodyEntregas.innerHTML = `<tr><td colspan="6" style="color: #94a3b8; padding: 18px;">Nenhuma entrega aberta.</td></tr>`;
         } else {
             entregas.forEach((item, index) => {
                 const valorItem = Number(item.aPagar);
@@ -560,6 +582,7 @@
 
                 tbodyEntregas.innerHTML += `
                     <tr>
+                        <td style="font-weight: 700;">${item.fornecedor || 'Geral'}</td>
                         <td><span class="badge ${isLenha ? 'badge-lenha' : 'badge-tijolo'}">${item.tipo}</span></td>
                         <td>${formatarData(item.dEntrega)}</td>
                         <td><input type="number" step="0.01" class="input-inline-edit" value="${qtdeItem}" onchange="atualizarQuantidadeEntrega(${index}, this.value)"> ${isLenha ? 'm³' : 'un'}</td>
@@ -580,12 +603,13 @@
         let totalAdiantamento = 0;
 
         if (adiantamentos.length === 0) {
-            tbodyAdiantamentos.innerHTML = `<tr><td colspan="4" style="color: #94a3b8; padding: 18px;">Nenhum adiantamento aberto.</td></tr>`;
+            tbodyAdiantamentos.innerHTML = `<tr><td colspan="5" style="color: #94a3b8; padding: 18px;">Nenhum adiantamento aberto.</td></tr>`;
         } else {
             adiantamentos.forEach((item, index) => {
                 totalAdiantamento += Number(item.valor);
                 tbodyAdiantamentos.innerHTML += `
                     <tr>
+                        <td style="font-weight: 700;">${item.fornecedor || 'Geral'}</td>
                         <td>${formatarData(item.data)}</td>
                         <td style="font-weight: 700; color: var(--danger);">${formatarMoeda(item.valor)}</td>
                         <td>${item.obs || '-'}</td>
@@ -596,18 +620,28 @@
         }
 
         document.getElementById('totalAdiantamentos').innerText = formatarMoeda(totalAdiantamento);
+        atualizarSelectFornecedores();
         renderizarHistorico();
     }
 
     document.getElementById('formEntrega').addEventListener('submit', function(e) {
         e.preventDefault();
+        const forn = document.getElementById('fornecedorEntrega').value.trim();
         entregas.push({
+            fornecedor: forn || 'Geral',
             tipo: document.getElementById('tipoProduto').value,
             dEntrega: document.getElementById('dEntrega').value,
             qtde: document.getElementById('qtde').value,
             aPagar: document.getElementById('aPagar').value
         });
+
+        // Preenche automaticamente o campo de acerto com este fornecedor caso esteja vazio
+        if(forn && !document.getElementById('nomeFornecedorAcerto').value) {
+            document.getElementById('nomeFornecedorAcerto').value = forn;
+        }
+
         this.reset();
+        document.getElementById('fornecedorEntrega').value = forn; // mantem o ultimo digitado
         document.getElementById('dEntrega').value = new Date().toISOString().split('T')[0];
         alterarTipoProduto();
         guardarDadosPermanente();
@@ -615,12 +649,15 @@
 
     document.getElementById('formAdiantamento').addEventListener('submit', function(e) {
         e.preventDefault();
+        const forn = document.getElementById('fornecedorVale').value.trim();
         adiantamentos.push({
+            fornecedor: forn || 'Geral',
             data: document.getElementById('dataAdiantamento').value,
             valor: document.getElementById('valorAdiantamento').value,
             obs: document.getElementById('obsAdiantamento').value
         });
         this.reset();
+        document.getElementById('fornecedorVale').value = forn;
         document.getElementById('dataAdiantamento').value = new Date().toISOString().split('T')[0];
         guardarDadosPermanente();
     });
@@ -628,7 +665,9 @@
     function calcularAcerto() {
         const totalEntregas = entregas.reduce((acc, item) => acc + Number(item.aPagar), 0);
         const totalAdiantamentos = adiantamentos.reduce((acc, item) => acc + Number(item.valor), 0);
+        const fornecedor = document.getElementById('nomeFornecedorAcerto').value.trim() || 'Geral';
         
+        document.getElementById('acertoNomeFornecedor').innerText = fornecedor;
         document.getElementById('acertoDataPagamento').innerText = new Date().toLocaleDateString('pt-BR');
         document.getElementById('acertoTotalEntregas').innerText = formatarMoeda(totalEntregas);
         document.getElementById('acertoTotalAdiantamentos').innerText = formatarMoeda(totalAdiantamentos);
@@ -642,6 +681,7 @@
             return;
         }
 
+        const fornecedor = document.getElementById('nomeFornecedorAcerto').value.trim() || 'Geral';
         const totalEntregas = entregas.reduce((acc, item) => acc + Number(item.aPagar), 0);
         const totalTijolos = entregas.filter(i => i.tipo === 'TIJOLO').reduce((acc, item) => acc + Number(item.qtde), 0);
         const totalLenha = entregas.filter(i => i.tipo === 'LENHA').reduce((acc, item) => acc + Number(item.qtde), 0);
@@ -649,6 +689,7 @@
 
         historicoAcertos.push({
             id: Date.now(),
+            fornecedor: fornecedor,
             isoDate: new Date().toISOString().split('T')[0],
             dataAcerto: new Date().toLocaleDateString('pt-BR'),
             totalTijolos: totalTijolos,
@@ -662,15 +703,33 @@
 
         entregas = [];
         adiantamentos = [];
+        document.getElementById('nomeFornecedorAcerto').value = '';
         document.getElementById('painelAcerto').style.display = 'none';
         
         guardarDadosPermanente();
         
-        alert("Acerto finalizado e salvo permanentemente no histórico!");
+        alert("Acerto do fornecedor '" + fornecedor + "' finalizado e salvo no histórico!");
 
         document.getElementById('inputSenha').value = '';
         document.getElementById('appContent').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
+    }
+
+    function atualizarSelectFornecedores() {
+        const select = document.getElementById('filtroFornecedor');
+        const valorAtual = select.value;
+        const fornecedoresUnicos = new Set();
+
+        historicoAcertos.forEach(item => {
+            if (item.fornecedor) fornecedoresUnicos.add(item.fornecedor);
+        });
+
+        select.innerHTML = '<option value="TODOS">-- Todos os Fornecedores --</option>';
+        fornecedoresUnicos.forEach(f => {
+            select.innerHTML += `<option value="${f}">${f}</option>`;
+        });
+
+        select.value = valorAtual;
     }
 
     function renderizarHistorico(lista = historicoAcertos) {
@@ -678,7 +737,7 @@
         container.innerHTML = '';
 
         if (!lista || lista.length === 0) {
-            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum acerto encontrado para o período informado.</div>`;
+            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum acerto encontrado para o filtro informado.</div>`;
             return;
         }
 
@@ -686,7 +745,10 @@
             container.innerHTML += `
                 <div class="historico-card">
                     <div class="historico-header">
-                        <strong style="color: var(--primary);">Acerto do Dia ${item.dataAcerto}</strong>
+                        <div>
+                            <strong style="color: var(--primary); font-size: 15px;">Acerto: ${item.dataAcerto}</strong>
+                            <span style="display: block; font-size: 12px; color: var(--accent); font-weight: 700;"><i class="fa-solid fa-truck"></i> Fornecedor: ${item.fornecedor || 'Geral'}</span>
+                        </div>
                         <button class="btn-action-icon" title="Excluir este acerto" onclick="removerAcertoHistorico(${item.id})"><i class="fa-solid fa-trash"></i></button>
                     </div>
                     <div class="historico-detalhes">
@@ -704,7 +766,10 @@
     function filtrarHistorico() {
         const dInicio = document.getElementById('filtroDataInicio').value;
         const dFim = document.getElementById('filtroDataFim').value;
+        const fornSel = document.getElementById('filtroFornecedor').value;
+
         const res = historicoAcertos.filter(i => {
+            if (fornSel !== 'TODOS' && i.fornecedor !== fornSel) return false;
             if (dInicio && i.isoDate < dInicio) return false;
             if (dFim && i.isoDate > dFim) return false;
             return true;
@@ -715,6 +780,7 @@
     function limparFiltroHistorico() {
         document.getElementById('filtroDataInicio').value = '';
         document.getElementById('filtroDataFim').value = '';
+        document.getElementById('filtroFornecedor').value = 'TODOS';
         renderizarHistorico(historicoAcertos);
     }
 
@@ -733,19 +799,21 @@
         }
     }
 
-    // RELATÓRIO VIA IMPRESSORA / SALVAR EM PDF (SEM ERRO DE TELA EM BRANCO)
+    // RELATÓRIO VIA IMPRESSORA / SALVAR EM PDF
     function gerarRelatorioPDF() {
         const dInicio = document.getElementById('filtroDataInicio').value;
         const dFim = document.getElementById('filtroDataFim').value;
+        const fornSel = document.getElementById('filtroFornecedor').value;
 
         const listaFiltrada = historicoAcertos.filter(i => {
+            if (fornSel !== 'TODOS' && i.fornecedor !== fornSel) return false;
             if (dInicio && i.isoDate < dInicio) return false;
             if (dFim && i.isoDate > dFim) return false;
             return true;
         });
 
         if (listaFiltrada.length === 0) {
-            alert("Nenhum registro de acerto encontrado para o período selecionado.");
+            alert("Nenhum registro de acerto encontrado para os filtros selecionados.");
             return;
         }
 
@@ -767,6 +835,7 @@
             linhasTabela += `
                 <tr>
                     <td>${i.dataAcerto}</td>
+                    <td><b>${i.fornecedor || 'Geral'}</b></td>
                     <td>${i.totalTijolos} un</td>
                     <td>${Number(i.totalLenha).toFixed(2)} m³</td>
                     <td>${formatarMoeda(i.totalEntregas)}</td>
@@ -777,17 +846,19 @@
         });
 
         const textoPeriodo = (dInicio || dFim) 
-            ? `Período Consultado: ${formatarData(dInicio)} até ${formatarData(dFim)}`
-            : "Período Consultado: Histórico Completo";
+            ? `Período: ${formatarData(dInicio)} até ${formatarData(dFim)}`
+            : "Período: Histórico Completo";
 
-        // Criação do relatório em nova aba pronta para Salvar em PDF
+        const textoFornecedor = (fornSel !== 'TODOS') ? `Fornecedor: ${fornSel}` : "Fornecedores: Todos";
+
+        // Criação do relatório em nova aba
         const win = window.open('', '_blank');
         win.document.write(`
             <!DOCTYPE html>
             <html lang="pt-BR">
             <head>
                 <meta charset="UTF-8">
-                <title>Relatorio_Renascer</title>
+                <title>Relatorio_Renascer_${fornSel}</title>
                 <style>
                     body { font-family: Arial, sans-serif; padding: 25px; color: #1e293b; }
                     .header { text-align: center; border-bottom: 2px solid #0a2540; padding-bottom: 12px; margin-bottom: 20px; }
@@ -808,13 +879,14 @@
                 <div class="header">
                     <div class="title">RENASCER MATERIAIS PARA CONSTRUÇÃO</div>
                     <div class="subtitle">Relatório Consolidado de Acertos de Entregas</div>
-                    <div class="subtitle" style="font-weight: bold; color: #0a2540; margin-top: 6px;">${textoPeriodo}</div>
+                    <div class="subtitle" style="font-weight: bold; color: #0a2540; margin-top: 6px;">${textoFornecedor} | ${textoPeriodo}</div>
                 </div>
 
                 <table>
                     <thead>
                         <tr>
                             <th>Data Acerto</th>
+                            <th>Fornecedor</th>
                             <th>Tijolos (Un)</th>
                             <th>Lenha (m³)</th>
                             <th>Total Entregas</th>
@@ -828,7 +900,7 @@
                 </table>
 
                 <div class="total-box">
-                    <h3>RESUMO FINANCEIRO DO PERÍODO:</h3>
+                    <h3>RESUMO FINANCEIRO DO PERÍODO (${fornSel}):</h3>
                     <p>• Total Tijolos: <b>${totTijolo} un</b> (R$ ${totValTijolo.toFixed(2).replace('.', ',')})</p>
                     <p>• Total Lenha: <b>${totLenha.toFixed(2).replace('.', ',')} m³</b> (R$ ${totValLenha.toFixed(2).replace('.', ',')})</p>
                     <p>• Total Bruto de Entregas: <b style="color: #0a2540;">${formatarMoeda(totEntregas)}</b></p>
