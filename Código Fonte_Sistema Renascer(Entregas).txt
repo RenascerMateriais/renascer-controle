@@ -1,0 +1,135 @@
+function imprimirTabelaManual() {
+    const janelaImpressao = window.open('', '', 'width=1100,height=750');
+
+    // Gera 18 linhas em branco para preenchimento manual (quantidade ideal para A4 Paisagem)
+    let linhasTabela = '';
+    for (let i = 1; i <= 18; i++) {
+        linhasTabela += `
+            <tr>
+                <td style="width: 50px; text-align: center;">${i}</td>
+                <td style="width: 130px;"></td>
+                <td style="width: 250px;"></td>
+                <td style="width: 100px;"></td>
+                <td></td>
+            </tr>
+        `;
+    }
+
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <title>Controle de Entrega de Tijolos - Preenchimento Manual</title>
+            <style>
+                @page {
+                    size: A4 landscape;
+                    margin: 10mm;
+                }
+                * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                }
+                body {
+                    padding: 10px;
+                    color: #000;
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 2px solid #000;
+                    padding-bottom: 8px;
+                    margin-bottom: 12px;
+                }
+                .header h1 {
+                    font-size: 20px;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+                .header p {
+                    font-size: 13px;
+                    font-weight: bold;
+                    margin-top: 4px;
+                }
+                .info-meta {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 10px;
+                    font-size: 12px;
+                    font-weight: bold;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    border: 1px solid #000;
+                    padding: 8px;
+                    height: 28px;
+                    font-size: 12px;
+                }
+                th {
+                    background-color: #f0f0f0;
+                    text-transform: uppercase;
+                    font-weight: bold;
+                    text-align: center;
+                }
+                .footer {
+                    margin-top: 15px;
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 11px;
+                    font-weight: bold;
+                }
+                .assinatura {
+                    border-top: 1px solid #000;
+                    width: 250px;
+                    text-align: center;
+                    padding-top: 4px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>RENASCER MATERIAIS DE CONSTRUÇÃO</h1>
+                <p>CONTROLE DE ENTREGA DE TIJOLOS</p>
+            </div>
+
+            <div class="info-meta">
+                <span>MOTORISTA / ENTREGADOR: _____________________________________</span>
+                <span>PLACA DO VEÍCULO: _______________</span>
+                <span>DATA EMISSÃO: ____/____/________</span>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Nº</th>
+                        <th style="width: 130px;">DATA ENTREGA</th>
+                        <th style="width: 250px;">NOME CLIENTE</th>
+                        <th style="width: 100px;">QTDE</th>
+                        <th>OBSERVAÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${linhasTabela}
+                </tbody>
+            </table>
+
+            <div class="footer">
+                <span>Visto Conferência: ___________________________</span>
+                <div class="assinatura">Assinatura do Responsável</div>
+            </div>
+        </body>
+        </html>
+    `;
+
+    janelaImpressao.document.write(htmlContent);
+    janelaImpressao.document.close();
+    
+    // Dispara a janela de impressão após carregar o conteúdo
+    setTimeout(() => {
+        janelaImpressao.print();
+    }, 250);
+}
