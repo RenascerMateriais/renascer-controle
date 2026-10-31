@@ -400,7 +400,7 @@
             </div>
 
             <button class="btn btn-navy" onclick="calcularAcerto()">
-                <i class="fa-solid fa-calculator"></i> Calcular Acerto de Contas
+                <i class="fa-solid fa-calculator"></i> Calcular Acerto de Contas & Imprimir
             </button>
 
             <div id="painelAcerto" style="display: none;">
@@ -456,6 +456,14 @@
     let adiantamentos = [];
     let historicoAcertos = [];
 
+    // Coloca o foco automaticamente no campo de senha assim que a página abre
+    window.onload = function() {
+        const inputSenha = document.getElementById('inputSenha');
+        if (inputSenha) {
+            inputSenha.focus();
+        }
+    };
+
     function toggleSenha() {
         const input = document.getElementById('inputSenha');
         const icon = document.getElementById('iconEye');
@@ -479,6 +487,7 @@
         } else {
             alert("Senha incorreta! Tente novamente.");
             document.getElementById('inputSenha').value = "";
+            document.getElementById('inputSenha').focus();
         }
     }
 
@@ -635,13 +644,12 @@
             aPagar: document.getElementById('aPagar').value
         });
 
-        // Preenche automaticamente o campo de acerto com este fornecedor caso esteja vazio
         if(forn && !document.getElementById('nomeFornecedorAcerto').value) {
             document.getElementById('nomeFornecedorAcerto').value = forn;
         }
 
         this.reset();
-        document.getElementById('fornecedorEntrega').value = forn; // mantem o ultimo digitado
+        document.getElementById('fornecedorEntrega').value = forn;
         document.getElementById('dEntrega').value = new Date().toISOString().split('T')[0];
         alterarTipoProduto();
         guardarDadosPermanente();
@@ -663,6 +671,11 @@
     });
 
     function calcularAcerto() {
+        if (entregas.length === 0 && adiantamentos.length === 0) {
+            alert("Não há registros abertos para calcular acerto.");
+            return;
+        }
+
         const totalEntregas = entregas.reduce((acc, item) => acc + Number(item.aPagar), 0);
         const totalAdiantamentos = adiantamentos.reduce((acc, item) => acc + Number(item.valor), 0);
         const fornecedor = document.getElementById('nomeFornecedorAcerto').value.trim() || 'Geral';
@@ -673,6 +686,9 @@
         document.getElementById('acertoTotalAdiantamentos').innerText = formatarMoeda(totalAdiantamentos);
         document.getElementById('acertoSaldoFinal').innerText = formatarMoeda(totalEntregas - totalAdiantamentos);
         document.getElementById('painelAcerto').style.display = 'block';
+
+        // Abre automaticamente o relatório / impressão em PDF dos dados atuais da tela
+        gerarRelatorioPDFAtual();
     }
 
     function finalizarEVoltarLogin() {
@@ -698,7 +714,9 @@
             valLenha: totalLenha * 65.00,
             totalEntregas: totalEntregas,
             totalAdiantamentos: totalAdiantamentos,
-            saldoPago: totalEntregas - totalAdiantamentos
+            saldoPago: totalEntregas - totalAdiantamentos,
+            itensEntregas: [...entregas],
+            itensAdiantamentos: [...adiantamentos]
         });
 
         entregas = [];
@@ -713,6 +731,7 @@
         document.getElementById('inputSenha').value = '';
         document.getElementById('appContent').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('inputSenha').focus();
     }
 
     function atualizarSelectFornecedores() {
@@ -799,7 +818,146 @@
         }
     }
 
-    // RELATÓRIO VIA IMPRESSORA / SALVAR EM PDF
+    // RELATÓRIO DISCRIMINADO DOS DADOS ATUAIS (ACIONADO AO CLICAR EM CALCULAR ACERTO)
+    function gerarRelatorioPDFAtual() {
+        const fornecedorFiltro = document.getElementById('nomeFornecedorAcerto').value.trim() || 'Geral';
+        
+        let totTijolos = 0, totValTijolos = 0;
+        let totLenha = 0, totValLenha = 0;
+        let totEntregas = 0, totVales = 0;
+
+        let linhasEntregas = '';
+        if (entregas.length > 0) {
+            entregas.forEach(ent => {
+                const isLenha = ent.tipo === 'LENHA';
+                const qtde = Number(ent.qtde);
+                const valor = Number(ent.aPagar);
+                
+                if (isLenha) { totLenha += qtde; totValLenha += valor; }
+                else { totTijolos += qtde; totValTijolos += valor; }
+                totEntregas += valor;
+
+                linhasEntregas += `
+                    <tr>
+                        <td>${formatarData(ent.dEntrega)}</td>
+                        <td>${ent.fornecedor}</td>
+                        <td>${ent.tipo}</td>
+                        <td>${qtde} ${isLenha ? 'm³' : 'un'}</td>
+                        <td>${formatarMoeda(valor)}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            linhasEntregas = `<tr><td colspan="5" style="color: #64748b;">Nenhuma entrega aberta.</td></tr>`;
+        }
+
+        let linhasVales = '';
+        if (adiantamentos.length > 0) {
+            adiantamentos.forEach(val => {
+                const v = Number(val.valor);
+                totVales += v;
+                linhasVales += `
+                    <tr>
+                        <td>${formatarData(val.data)}</td>
+                        <td>${val.fornecedor}</td>
+                        <td>${formatarMoeda(v)}</td>
+                        <td>${val.obs || '-'}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            linhasVales = `<tr><td colspan="4" style="color: #64748b;">Nenhum adiantamento aberto.</td></tr>`;
+        }
+
+        const saldoLiquido = totEntregas - totVales;
+
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <title>Pre-Acerto_${fornecedorFiltro}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; color: #1e293b; }
+                    .header { text-align: center; border-bottom: 2px solid #0a2540; padding-bottom: 12px; margin-bottom: 20px; }
+                    .title { font-size: 18px; font-weight: bold; color: #0a2540; }
+                    .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+                    .sub-titulo { font-size: 12px; font-weight: bold; color: #334155; margin-top: 10px; margin-bottom: 4px; }
+                    
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+                    th, td { border: 1px solid #e2e8f0; padding: 6px 8px; text-align: center; font-size: 11px; }
+                    th { background-color: #f1f5f9; font-weight: bold; color: #0a2540; }
+                    
+                    .total-geral { margin-top: 20px; background: #f8fafc; border: 2px solid #0a2540; padding: 15px; border-radius: 8px; }
+                    .total-geral h3 { font-size: 14px; margin-bottom: 8px; color: #0a2540; }
+                    .total-geral p { font-size: 12px; margin-bottom: 4px; }
+                    
+                    @media print {
+                        body { padding: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="title">RENASCER MATERIAIS PARA CONSTRUÇÃO</div>
+                    <div class="subtitle">Demonstrativo de Pré-Acerto / Fechamento Atual</div>
+                    <div class="subtitle" style="font-weight: bold; color: #0a2540; margin-top: 6px;">Fornecedor: ${fornecedorFiltro} | Data: ${new Date().toLocaleDateString('pt-BR')}</div>
+                </div>
+
+                <div class="sub-titulo">Entregas em Aberto:</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Fornecedor / Entregador</th>
+                            <th>Produto</th>
+                            <th>Quantidade</th>
+                            <th>Valor Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${linhasEntregas}
+                    </tbody>
+                </table>
+
+                <div class="sub-titulo">Adiantamentos / Vales em Aberto:</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Favorecido</th>
+                            <th>Valor</th>
+                            <th>Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${linhasVales}
+                    </tbody>
+                </table>
+
+                <div class="total-geral">
+                    <h3>RESUMO DO ACERTO:</h3>
+                    <p>• Total Tijolos: <b>${totTijolos} un</b> (${formatarMoeda(totValTijolos)})</p>
+                    <p>• Total Lenha: <b>${totLenha.toFixed(2).replace('.', ',')} m³</b> (${formatarMoeda(totValLenha)})</p>
+                    <p>• Total Bruto de Entregas: <b>${formatarMoeda(totEntregas)}</b></p>
+                    <p>• Total de Vales/Adiantamentos: <b style="color: #dc2626;">${formatarMoeda(totVales)}</b></p>
+                    <hr style="margin: 8px 0; border: 0; border-top: 1px solid #cbd5e1;">
+                    <p style="font-size: 13px; font-weight: bold; color: #16a34a;">= SALDO LÍQUIDO A RECEBER: ${formatarMoeda(saldoLiquido)}</p>
+                </div>
+
+                <script>
+                    window.onload = function() {
+                        window.print();
+                    };
+                <\/script>
+            </body>
+            </html>
+        `);
+        win.document.close();
+    }
+
+    // RELATÓRIO DO HISTÓRICO SALVO VIA IMPRESSORA / SALVAR EM PDF
     function gerarRelatorioPDF() {
         const dInicio = document.getElementById('filtroDataInicio').value;
         const dFim = document.getElementById('filtroDataFim').value;
@@ -817,31 +975,94 @@
             return;
         }
 
-        let totTijolo = 0, totValTijolo = 0;
-        let totLenha = 0, totValLenha = 0;
-        let totEntregas = 0, totVales = 0, totLiquido = 0;
-
-        let linhasTabela = '';
+        let totTijoloGeral = 0, totLenhaGeral = 0;
+        let totEntregasGeral = 0, totValesGeral = 0, totLiquidoGeral = 0;
+        let htmlSecoesAcertos = '';
 
         listaFiltrada.forEach(i => {
-            totTijolo += Number(i.totalTijolos || 0);
-            totValTijolo += Number(i.valTijolos || (i.totalTijolos * 0.10));
-            totLenha += Number(i.totalLenha || 0);
-            totValLenha += Number(i.valLenha || (i.totalLenha * 65));
-            totEntregas += Number(i.totalEntregas);
-            totVales += Number(i.totalAdiantamentos);
-            totLiquido += Number(i.saldoPago);
+            totTijoloGeral += Number(i.totalTijolos || 0);
+            totLenhaGeral += Number(i.totalLenha || 0);
+            totEntregasGeral += Number(i.totalEntregas || 0);
+            totValesGeral += Number(i.totalAdiantamentos || 0);
+            totLiquidoGeral += Number(i.saldoPago || 0);
 
-            linhasTabela += `
-                <tr>
-                    <td>${i.dataAcerto}</td>
-                    <td><b>${i.fornecedor || 'Geral'}</b></td>
-                    <td>${i.totalTijolos} un</td>
-                    <td>${Number(i.totalLenha).toFixed(2)} m³</td>
-                    <td>${formatarMoeda(i.totalEntregas)}</td>
-                    <td>${formatarMoeda(i.totalAdiantamentos)}</td>
-                    <td><b>${formatarMoeda(i.saldoPago)}</b></td>
-                </tr>
+            let linhasEntregas = '';
+            if (i.itensEntregas && i.itensEntregas.length > 0) {
+                i.itensEntregas.forEach(ent => {
+                    linhasEntregas += `
+                        <tr>
+                            <td>${formatarData(ent.dEntrega)}</td>
+                            <td>${ent.fornecedor}</td>
+                            <td>${ent.tipo}</td>
+                            <td>${ent.qtde} ${ent.tipo === 'TIJOLO' ? 'un' : 'm³'}</td>
+                            <td>${formatarMoeda(ent.aPagar)}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                linhasEntregas = `<tr><td colspan="5" style="color: #64748b;">(Sem detalhamento individual gravado - Total: ${formatarMoeda(i.totalEntregas)})</td></tr>`;
+            }
+
+            let linhasVales = '';
+            if (i.itensAdiantamentos && i.itensAdiantamentos.length > 0) {
+                i.itensAdiantamentos.forEach(val => {
+                    linhasVales += `
+                        <tr>
+                            <td>${formatarData(val.data)}</td>
+                            <td>${val.fornecedor}</td>
+                            <td>${formatarMoeda(val.valor)}</td>
+                            <td>${val.obs || '-'}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                linhasVales = `<tr><td colspan="4" style="color: #64748b;">(Nenhum adiantamento neste acerto)</td></tr>`;
+            }
+
+            htmlSecoesAcertos += `
+                <div class="bloco-acerto">
+                    <div class="bloco-titulo">
+                        <span>Acerto Realizado em: <b>${i.dataAcerto}</b> | Fornecedor: <b>${i.fornecedor}</b></span>
+                        <span>Saldo Líquido: <b>${formatarMoeda(i.saldoPago)}</b></span>
+                    </div>
+
+                    <div class="sub-titulo">Entregas do Período:</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Fornecedor / Entregador</th>
+                                <th>Produto</th>
+                                <th>Quantidade</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${linhasEntregas}
+                        </tbody>
+                    </table>
+
+                    <div class="sub-titulo" style="margin-top: 10px;">Adiantamentos / Vales do Período:</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Favorecido</th>
+                                <th>Valor</th>
+                                <th>Observação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${linhasVales}
+                        </tbody>
+                    </table>
+
+                    <div class="resumo-bloco">
+                        Total Entregas: ${formatarMoeda(i.totalEntregas)} &nbsp;|&nbsp; 
+                        (-) Vales: ${formatarMoeda(i.totalAdiantamentos)} &nbsp;|&nbsp; 
+                        <b>Líquido: ${formatarMoeda(i.saldoPago)}</b>
+                    </div>
+                </div>
             `;
         });
 
@@ -851,62 +1072,55 @@
 
         const textoFornecedor = (fornSel !== 'TODOS') ? `Fornecedor: ${fornSel}` : "Fornecedores: Todos";
 
-        // Criação do relatório em nova aba
         const win = window.open('', '_blank');
         win.document.write(`
             <!DOCTYPE html>
             <html lang="pt-BR">
             <head>
                 <meta charset="UTF-8">
-                <title>Relatorio_Renascer_${fornSel}</title>
+                <title>Relatorio_Discriminado_${fornSel}</title>
                 <style>
-                    body { font-family: Arial, sans-serif; padding: 25px; color: #1e293b; }
+                    body { font-family: Arial, sans-serif; padding: 20px; color: #1e293b; }
                     .header { text-align: center; border-bottom: 2px solid #0a2540; padding-bottom: 12px; margin-bottom: 20px; }
-                    .title { font-size: 20px; font-weight: bold; color: #0a2540; }
-                    .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; font-size: 12px; }
+                    .title { font-size: 18px; font-weight: bold; color: #0a2540; }
+                    .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+                    
+                    .bloco-acerto { border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 20px; background: #fff; }
+                    .bloco-titulo { background: #0a2540; color: #fff; padding: 8px 12px; font-size: 13px; display: flex; justify-content: space-between; border-radius: 4px; margin-bottom: 10px; }
+                    .sub-titulo { font-size: 12px; font-weight: bold; color: #334155; margin-top: 6px; margin-bottom: 4px; }
+                    
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
+                    th, td { border: 1px solid #e2e8f0; padding: 6px 8px; text-align: center; font-size: 11px; }
                     th { background-color: #f1f5f9; font-weight: bold; color: #0a2540; }
-                    .total-box { margin-top: 20px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; }
-                    .total-box h3 { font-size: 14px; margin-bottom: 8px; color: #0a2540; }
-                    .total-box p { font-size: 12px; margin-bottom: 4px; }
+                    
+                    .resumo-bloco { text-align: right; font-size: 12px; margin-top: 6px; padding: 4px 8px; background: #f8fafc; border: 1px dashed #cbd5e1; }
+                    .total-geral { margin-top: 25px; background: #f8fafc; border: 2px solid #0a2540; padding: 15px; border-radius: 8px; }
+                    .total-geral h3 { font-size: 14px; margin-bottom: 8px; color: #0a2540; }
+                    .total-geral p { font-size: 12px; margin-bottom: 4px; }
+                    
                     @media print {
                         body { padding: 0; }
+                        .bloco-acerto { page-break-inside: avoid; }
                     }
                 </style>
             </head>
             <body>
                 <div class="header">
                     <div class="title">RENASCER MATERIAIS PARA CONSTRUÇÃO</div>
-                    <div class="subtitle">Relatório Consolidado de Acertos de Entregas</div>
+                    <div class="subtitle">Relatório Analítico Discriminado de Acertos e Entregas</div>
                     <div class="subtitle" style="font-weight: bold; color: #0a2540; margin-top: 6px;">${textoFornecedor} | ${textoPeriodo}</div>
                 </div>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data Acerto</th>
-                            <th>Fornecedor</th>
-                            <th>Tijolos (Un)</th>
-                            <th>Lenha (m³)</th>
-                            <th>Total Entregas</th>
-                            <th>Vales/Adiant.</th>
-                            <th>Líquido Pago</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${linhasTabela}
-                    </tbody>
-                </table>
+                ${htmlSecoesAcertos}
 
-                <div class="total-box">
-                    <h3>RESUMO FINANCEIRO DO PERÍODO (${fornSel}):</h3>
-                    <p>• Total Tijolos: <b>${totTijolo} un</b> (R$ ${totValTijolo.toFixed(2).replace('.', ',')})</p>
-                    <p>• Total Lenha: <b>${totLenha.toFixed(2).replace('.', ',')} m³</b> (R$ ${totValLenha.toFixed(2).replace('.', ',')})</p>
-                    <p>• Total Bruto de Entregas: <b style="color: #0a2540;">${formatarMoeda(totEntregas)}</b></p>
-                    <p>• Total de Vales/Adiantamentos: <b style="color: #dc2626;">${formatarMoeda(totVales)}</b></p>
+                <div class="total-geral">
+                    <h3>RESUMO CONSOLIDADO GERAL DO PERÍODO:</h3>
+                    <p>• Total Geral Tijolos: <b>${totTijoloGeral} un</b></p>
+                    <p>• Total Geral Lenha: <b>${totLenhaGeral.toFixed(2).replace('.', ',')} m³</b></p>
+                    <p>• Total Bruto de Entregas: <b>${formatarMoeda(totEntregasGeral)}</b></p>
+                    <p>• Total de Vales/Adiantamentos: <b style="color: #dc2626;">${formatarMoeda(totValesGeral)}</b></p>
                     <hr style="margin: 8px 0; border: 0; border-top: 1px solid #cbd5e1;">
-                    <p style="font-size: 14px; font-weight: bold; color: #16a34a;">= TOTAL LÍQUIDO PAGO: ${formatarMoeda(totLiquido)}</p>
+                    <p style="font-size: 13px; font-weight: bold; color: #16a34a;">= TOTAL LÍQUIDO GERAL PAGO: ${formatarMoeda(totLiquidoGeral)}</p>
                 </div>
 
                 <script>
